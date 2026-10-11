@@ -1,0 +1,105 @@
+!
+version 15.1
+no service timestamps log datetime msec
+no service timestamps debug datetime msec
+no service password-encryption
+!
+hostname R3
+!
+!
+!
+enable secret 5 $1$mERr$hx5rVt7rPNoS4wqbXKX7m0
+!
+!
+!
+!
+!
+!
+ip cef
+no ipv6 cef
+!
+!
+!
+!
+license udi pid CISCO2911/K9 sn FTX156800E7-
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+no ip domain-lookup
+!
+!
+spanning-tree mode pvst
+!
+!
+!
+!
+!
+!
+interface Loopback0
+ ip address 3.3.3.3 255.255.255.255
+!
+interface GigabitEthernet0/0
+ description R1 Gi0/1 - Alan 0
+ ip address 10.0.13.2 255.255.255.252
+ ip ospf message-digest-key 1 md5 OSPF-LAB
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet0/1
+ description R2 Gi0/1 - Alan 0
+ ip address 10.0.23.2 255.255.255.252
+ ip ospf message-digest-key 1 md5 OSPF-LAB
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet0/2
+ description R5 Gi0/0 - Alan 2
+ ip address 10.2.35.1 255.255.255.252
+ duplex auto
+ speed auto
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+router ospf 1
+ router-id 3.3.3.3
+ log-adjacency-changes
+ area 0 authentication message-digest
+ area 2 stub no-summary
+ auto-cost reference-bandwidth 1000
+ network 3.3.3.3 0.0.0.0 area 0
+ network 10.0.13.0 0.0.0.3 area 0
+ network 10.0.23.0 0.0.0.3 area 0
+ network 10.2.35.0 0.0.0.3 area 2
+!
+ip classless
+!
+ip flow-export version 9
+!
+!
+!
+banner motd #*** R3 - Yetkisiz erisim yasaktir ***#
+!
+!
+!
+!
+line con 0
+ logging synchronous
+!
+line aux 0
+!
+line vty 0 4
+ login
+!
+!
+!
+end

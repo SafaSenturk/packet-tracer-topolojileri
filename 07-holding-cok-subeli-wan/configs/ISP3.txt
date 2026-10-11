@@ -1,0 +1,101 @@
+!
+version 15.1
+no service timestamps log datetime msec
+no service timestamps debug datetime msec
+no service password-encryption
+!
+hostname ISP3
+!
+!
+!
+enable secret 5 $1$mERr$hx5rVt7rPNoS4wqbXKX7m0
+!
+!
+!
+!
+!
+!
+ip cef
+no ipv6 cef
+!
+!
+!
+!
+license udi pid CISCO2911/K9 sn FTX1593FBD4-
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+no ip domain-lookup
+!
+!
+spanning-tree mode pvst
+!
+!
+!
+!
+!
+!
+interface Loopback0
+ description Internet test hedefi
+ ip address 8.8.8.8 255.255.255.255
+!
+interface GigabitEthernet0/0
+ description ISP4 halka
+ ip address 198.18.34.1 255.255.255.252
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet0/1
+ description ISP2 halka
+ ip address 198.18.23.2 255.255.255.252
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet0/2
+ description Musteri Izmir
+ ip address 203.0.113.9 255.255.255.252
+ duplex auto
+ speed auto
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+router ospf 100
+ router-id 100.0.0.3
+ log-adjacency-changes
+ passive-interface GigabitEthernet0/2
+ network 198.18.0.0 0.0.255.255 area 0
+ network 203.0.113.0 0.0.0.255 area 0
+ network 8.8.8.8 0.0.0.0 area 0
+!
+ip classless
+!
+ip flow-export version 9
+!
+!
+!
+banner motd #*** ISP3 - Yetkisiz erisim yasaktir ***#
+!
+!
+!
+!
+line con 0
+ logging synchronous
+!
+line aux 0
+!
+line vty 0 4
+ login
+!
+!
+!
+end

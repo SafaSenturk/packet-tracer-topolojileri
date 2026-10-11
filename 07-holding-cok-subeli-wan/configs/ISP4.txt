@@ -1,0 +1,96 @@
+!
+version 15.1
+no service timestamps log datetime msec
+no service timestamps debug datetime msec
+no service password-encryption
+!
+hostname ISP4
+!
+!
+!
+enable secret 5 $1$mERr$hx5rVt7rPNoS4wqbXKX7m0
+!
+!
+!
+!
+!
+!
+ip cef
+no ipv6 cef
+!
+!
+!
+!
+license udi pid CISCO2911/K9 sn FTX1513E831-
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+no ip domain-lookup
+!
+!
+spanning-tree mode pvst
+!
+!
+!
+!
+!
+!
+interface GigabitEthernet0/0
+ description ISP1 halka
+ ip address 198.18.41.1 255.255.255.252
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet0/1
+ description ISP3 halka
+ ip address 198.18.34.2 255.255.255.252
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet0/2
+ description Musteri Trabzon
+ ip address 203.0.113.13 255.255.255.252
+ duplex auto
+ speed auto
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+router ospf 100
+ router-id 100.0.0.4
+ log-adjacency-changes
+ passive-interface GigabitEthernet0/2
+ network 198.18.0.0 0.0.255.255 area 0
+ network 203.0.113.0 0.0.0.255 area 0
+!
+ip classless
+!
+ip flow-export version 9
+!
+!
+!
+banner motd #*** ISP4 - Yetkisiz erisim yasaktir ***#
+!
+!
+!
+!
+line con 0
+ logging synchronous
+!
+line aux 0
+!
+line vty 0 4
+ login
+!
+!
+!
+end
