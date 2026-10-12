@@ -20,12 +20,10 @@ no ipv6 cef
 !
 !
 !
-!
-license udi pid CISCO2911/K9 sn FTX1572D4F3-
-!
+username admin secret 5 $1$mERr$hx5rVt7rPNoS4wqbXKX7m0
 !
 !
-!
+license udi pid CISCO2911/K9 sn FTX15827B0F-
 !
 !
 !
@@ -33,7 +31,13 @@ license udi pid CISCO2911/K9 sn FTX1572D4F3-
 !
 !
 !
+!
+!
+!
+!
+ip ssh version 2
 no ip domain-lookup
+ip domain-name lab.local
 !
 !
 spanning-tree mode pvst
@@ -80,20 +84,26 @@ ip classless
 ip flow-export version 9
 !
 !
+ip access-list standard YONETIM-ERISIM
+ permit 10.200.10.0 0.0.0.255
 !
 banner motd #*** R-VERIMERKEZI - Yetkisiz erisim yasaktir ***#
 !
 !
 !
 !
+logging 10.200.10.30
 line con 0
  logging synchronous
 !
 line aux 0
 !
 line vty 0 4
- login
+ access-class YONETIM-ERISIM in
+ login local
+ transport input ssh
 !
 !
+ntp server 10.200.10.30
 !
 end

@@ -20,12 +20,10 @@ no ipv6 cef
 !
 !
 !
-!
-license udi pid CISCO2911/K9 sn FTX1513E831-
-!
+username admin secret 5 $1$mERr$hx5rVt7rPNoS4wqbXKX7m0
 !
 !
-!
+license udi pid CISCO2911/K9 sn FTX1573581E-
 !
 !
 !
@@ -33,7 +31,13 @@ license udi pid CISCO2911/K9 sn FTX1513E831-
 !
 !
 !
+!
+!
+!
+!
+ip ssh version 2
 no ip domain-lookup
+ip domain-name lab.local
 !
 !
 spanning-tree mode pvst
@@ -89,7 +93,8 @@ line con 0
 line aux 0
 !
 line vty 0 4
- login
+ login local
+ transport input ssh
 !
 !
 !

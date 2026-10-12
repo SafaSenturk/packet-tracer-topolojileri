@@ -26,7 +26,11 @@ Kullanılan cihazlar: Cisco 2911 yönlendirici, Catalyst 2960-24TT anahtar, PC v
 2. İlgili klasördeki `.pkt` dosyasını Packet Tracer 9.0.0 veya daha yeni bir sürümle açın.
 3. Açılıştan sonra protokollerin yakınsaması için kısa bir süre bekleyin (küçük topolojilerde yaklaşık bir dakika, 06 ve 07'de iki–üç dakika). İsterseniz *Fast Forward Time* düğmesiyle hızlandırabilirsiniz.
 
-Tüm cihazlarda `enable` parolası `cisco`'dur (yalnızca laboratuvar amaçlı).
+Tüm cihazlarda `enable` parolası `cisco`, SSH kullanıcısı `admin` / `cisco`'dur (yalnızca laboratuvar amaçlı).
+
+## Ortak yönetim ayarları
+
+Her topolojide yönlendirici ve anahtarlara yalnızca SSH (sürüm 2) ile, yerel kullanıcıyla girilir; Telnet kapalıdır. VTY hatlarına `YONETIM-ERISIM` erişim listesi uygulanır, böylece yalnızca senaryoda belirtilen yönetim ağlarından bağlanılabilir. 01, 05, 06 ve 07'de cihazlar saatlerini NTP sunucusundan alır ve günlüklerini merkezi syslog sunucusuna gönderir; sunucu adları DNS ile çözülür.
 
 ## Doğrulama
 
@@ -41,16 +45,35 @@ Dosyaların hepsi Packet Tracer 9.0.0'da açılıp yeniden kaydedildi; kaydedile
 | 05 | Merkez ve şubedeki 5 PC'nin merkezi DHCP sunucusundan adres alması | 5/5 |
 | 06 | 20 PC'nin veri merkezindeki DHCP sunucusundan adres alması; bina yönlendiricisinde OSPF rotaları | 20/20, tüm alanlar öğrenildi |
 | 07 | 13 PC'nin adres alması; GRE tünellerinin kurulması | 13/13 |
+| 07 | Genel müdürlükteki PC'den `intranet.holding.local` adına ping (DNS) | 4/4 |
+| 07 | Aynı PC'den R-GM'ye SSH ile giriş; `show clock` ile NTP'den alınan saat | Başarılı |
+| 07 | Genel müdürlükten İzmir şubesine GRE tüneli üzerinden ping | 4/4 |
 
 Ping testlerinde ilk paket ARP çözümlemesi sırasında düşer; bu beklenen davranıştır.
 
-Henüz test edilmeyenler: 04 ve 06'da dışarıdan DMZ'ye statik NAT ile erişim ve ACL'lerin engellediği trafik; 03'te bağlantı koparıldığında HSRP devralması; 07'de şubeler arası tünel üzerinden ping.
+Henüz test edilmeyenler: 04 ve 06'da dışarıdan DMZ'ye statik NAT ile erişim ve ACL'lerin engellediği trafik; 03'te bağlantı koparıldığında HSRP devralması; SSH, DNS ve NTP'nin 07 dışındaki topolojilerde denenmesi (yapılandırma aynı kalıptan üretildi ve Packet Tracer tarafından eksiksiz kabul edildi); syslog sunucusuna düşen kayıtlar.
+
+Kapsam dışı bırakılanlar: IPv6, IPsec VPN, RADIUS/TACACS+, kablosuz ağ ve katman 3 anahtarlar.
 
 ---
 
 ## 01 — VLAN ve Router-on-a-Stick
 
 ![01](01-vlan-inter-vlan-routing/topoloji.png)
+
+**Senaryo.** Üç katlı küçük bir ofis; muhasebe, insan kaynakları ve bilgi işlem birimleri aynı anahtarları paylaşıyor ama ağları ayrı olmalı.
+
+**İstenenler**
+
+1. Her birim için ayrı VLAN (10, 20, 30) ve ayrı bir yönetim VLAN'ı (99, native)
+2. VLAN'lar arası yönlendirme tek yönlendirici üzerinden (router-on-a-stick)
+3. PC'ler adreslerini DHCP ile alsın; ilk 10 adres ayrılmış olsun
+4. Erişim portlarında port-security (en fazla 2 MAC, sticky) ve BPDU guard
+5. Kullanılmayan portlar kapalı ve ayrı bir VLAN'da
+6. Cihazlara yalnızca SSH ile ve yalnızca bilgi işlem ile yönetim ağından erişilsin
+7. Saat NTP ile eşitlensin, günlükler sunucuya gönderilsin
+
+**Çözüm**
 
 Üç anahtarlı küçük bir ofis ağı. VLAN'lar arası yönlendirmeyi tek bir yönlendirici alt arayüzlerle yapar.
 
@@ -71,6 +94,20 @@ Henüz test edilmeyenler: 04 ve 06'da dışarıdan DMZ'ye statik NAT ile erişim
 
 ![02](02-cok-alanli-ospf/topoloji.png)
 
+**Senaryo.** Bir merkez ve iki uzak ofisi olan kurum; yönlendirme tabloları küçük kalmalı ve uzak ofislerdeki değişiklikler omurgayı etkilememeli.
+
+**İstenenler**
+
+1. OSPF üç alana bölünsün: omurga (0), Şube-A (1), Şube-B (2)
+2. Router-ID'ler loopback adreslerinden elle verilsin
+3. Omurga komşulukları MD5 ile doğrulansın
+4. Alan 2 totally stubby olsun (yalnızca varsayılan rota alsın)
+5. Kullanıcı ağlarına OSPF paketi gönderilmesin (passive-interface)
+6. Tüm PC'ler birbirine ulaşabilsin
+7. Yönlendiricilere yalnızca SSH ile ve yalnızca merkez ağından erişilsin
+
+**Çözüm**
+
 Beş yönlendiricili, üç alanlı bir OSPF tasarımı.
 
 | Alan | Yönlendiriciler | Ağlar |
@@ -87,6 +124,20 @@ Beş yönlendiricili, üç alanlı bir OSPF tasarımı.
 ## 03 — HSRP, EtherChannel ve Rapid-PVST+
 
 ![03](03-hsrp-etherchannel-stp/topoloji.png)
+
+**Senaryo.** Ağ geçidi ya da bir anahtar arızalandığında kullanıcıların bağlantısı kesilmemesi gereken bir ofis.
+
+**İstenenler**
+
+1. İki yönlendirici HSRP ile tek sanal ağ geçidi sunsun
+2. Yük paylaşımı: VLAN 10'da R1, VLAN 20'de R2 aktif olsun
+3. Uplink koparsa aktiflik diğer yönlendiriciye geçsin (track + preempt)
+4. Dağıtım anahtarları arası iki hat LACP ile tek kanal olsun
+5. STP kök köprüleri HSRP aktif yönlendiricileriyle aynı tarafta olsun
+6. Erişim anahtarları iki dağıtım anahtarına da bağlı olsun
+7. Yönetim erişimi yalnızca SSH ile
+
+**Çözüm**
 
 Yedekli ağ geçidi ve yedekli anahtarlama katmanı.
 
@@ -105,6 +156,19 @@ Yedekli ağ geçidi ve yedekli anahtarlama katmanı.
 
 ![04](04-nat-acl-dmz/topoloji.png)
 
+**Senaryo.** İnternete tek bir kenar yönlendiricisiyle çıkan ve dışarıya web ile FTP hizmeti veren bir şirket.
+
+**İstenenler**
+
+1. İç ağ internete tek genel adres üzerinden çıksın (PAT)
+2. DMZ'deki web ve FTP sunucuları sabit genel adreslerle yayınlansın (statik NAT)
+3. Dışarıdan yalnızca web (80/443) ve FTP (21) kabul edilsin
+4. DMZ'den iç ağa bağlantı başlatılamasın
+5. İç ağ hem DMZ'ye hem internete erişebilsin
+6. Kenar yönlendiricisine yalnızca yönetici PC'sinden SSH ile erişilsin
+
+**Çözüm**
+
 İç ağ, DMZ ve internet olmak üzere üç bölgeli kenar tasarımı.
 
 | Bölge | Ağ | Çeviri |
@@ -120,6 +184,21 @@ Yedekli ağ geçidi ve yedekli anahtarlama katmanı.
 ## 05 — Merkez–Şube Kurumsal Ağ
 
 ![05](05-merkez-sube-kurumsal-ag/topoloji.png)
+
+**Senaryo.** Bir merkez ofisi ve kiralık hatla bağlı bir şubesi olan işletme; misafirlere internet verilecek ama iç ağ korunacak.
+
+**İstenenler**
+
+1. Merkezde personel, misafir ve sunucu VLAN'ları
+2. Merkez ile şube arasında OSPF
+3. Tek bir DHCP sunucusu her iki konuma da adres dağıtsın (relay)
+4. İnternet çıkışı merkezden PAT ile
+5. Misafir ağı internete çıkabilsin ama iç ağa erişemesin
+6. Sunucu adları DNS ile çözülsün
+7. Cihaz yönetimi SSH ile, yalnızca sunucu ve yönetim ağından
+8. NTP ve merkezi günlük (syslog)
+
+**Çözüm**
 
 Bir merkez ve bir şubeden oluşan küçük işletme ağı.
 
@@ -140,6 +219,23 @@ Bir merkez ve bir şubeden oluşan küçük işletme ağı.
 ## 06 — Üniversite Kampüs Ağı
 
 ![06](06-universite-kampus-agi/topoloji.png)
+
+**Senaryo.** Beş binalı bir üniversite kampüsü. Personel, öğrenci ve laboratuvar ağları ayrı olacak; tüm binalar tek bir veri merkezinden hizmet alacak ve internete tek noktadan çıkılacak.
+
+**İstenenler**
+
+1. Her binada personel, öğrenci, laboratuvar ve yönetim VLAN'ları
+2. Binalar yedekli bir omurga üzerinden bağlansın (LACP)
+3. Her bina ayrı bir OSPF alanı olsun ve omurgaya tek özet rota duyursun
+4. Adresler veri merkezindeki tek DHCP sunucusundan dağıtılsın
+5. Öğrenci ağları yalnızca sunuculara ve internete erişebilsin
+6. İnternet çıkışı PAT ile; web ve e-posta sunucuları DMZ'de, statik NAT ile yayınlansın
+7. Dışarıdan yalnızca DMZ hizmetlerine erişilebilsin
+8. Sunucu adları DNS ile çözülsün (www, ftp)
+9. Cihaz yönetimi yalnızca SSH ile ve yalnızca veri merkezinden
+10. Tüm cihazlar NTP ile saat eşitlesin ve günlüklerini merkezi sunucuya göndersin
+
+**Çözüm**
 
 Beş bina, bir veri merkezi, DMZ ve internet kenarından oluşan kampüs ağı: 8 yönlendirici, 19 anahtar, 22 PC, 6 sunucu.
 
@@ -166,6 +262,22 @@ Her binada bir dağıtım ve iki erişim anahtarı, dört VLAN bulunur: 10 PERSO
 ## 07 — Holding – Çok Şubeli WAN
 
 ![07](07-holding-cok-subeli-wan/topoloji.png)
+
+**Senaryo.** Genel müdürlüğü ve üç şehirde şubesi olan bir holding. Sahalar internet üzerinden birbirine bağlanacak ve şubeler genel müdürlükteki sunucuları kullanacak.
+
+**İstenenler**
+
+1. Genel müdürlükte beş VLAN ve yedekli dağıtım katmanı (LACP, çift bağlantılı erişim anahtarları)
+2. Şubeler genel müdürlüğe GRE tünelleriyle bağlansın
+3. Tüneller üzerinde OSPF çalışsın; şubeler birbirine genel müdürlük üzerinden ulaşsın
+4. Her saha internete kendi hattından PAT ile çıksın; sahalar arası trafik NAT'a girmesin
+5. Genel müdürlükte merkezi DHCP, şubelerde yerel DHCP
+6. Misafir ağları iç ağa erişemesin
+7. Sunucu adları DNS ile çözülsün (intranet, dosya)
+8. Cihaz yönetimi yalnızca SSH ile ve yalnızca bilgi işlem ile yönetim ağından
+9. NTP ve merkezi günlük (syslog)
+
+**Çözüm**
 
 Bir genel müdürlük ve üç şubenin servis sağlayıcı ağı üzerinden bağlandığı WAN tasarımı: 8 yönlendirici, 7 anahtar, 13 PC, 3 sunucu.
 

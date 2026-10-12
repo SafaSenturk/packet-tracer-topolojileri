@@ -17,6 +17,7 @@ ip dhcp excluded-address 10.3.20.1 10.3.20.20
 ip dhcp pool PERSONEL
  network 10.3.10.0 255.255.255.0
  default-router 10.3.10.1
+ dns-server 10.1.40.20
 ip dhcp pool MISAFIR
  network 10.3.20.0 255.255.255.0
  default-router 10.3.20.1
@@ -28,12 +29,10 @@ no ipv6 cef
 !
 !
 !
-!
-license udi pid CISCO2911/K9 sn FTX15902EC3-
-!
+username admin secret 5 $1$mERr$hx5rVt7rPNoS4wqbXKX7m0
 !
 !
-!
+license udi pid CISCO2911/K9 sn FTX15327C3E-
 !
 !
 !
@@ -41,7 +40,13 @@ license udi pid CISCO2911/K9 sn FTX15902EC3-
 !
 !
 !
+!
+!
+!
+!
+ip ssh version 2
 no ip domain-lookup
+ip domain-name lab.local
 !
 !
 spanning-tree mode pvst
@@ -119,20 +124,27 @@ ip access-list extended MISAFIR-IN
  permit udp any any eq bootps
  deny ip 10.3.20.0 0.0.0.255 10.0.0.0 0.255.255.255
  permit ip any any
+ip access-list standard YONETIM-ERISIM
+ permit 10.1.30.0 0.0.0.255
+ permit 10.1.99.0 0.0.0.255
 !
 banner motd #*** R-IZMIR - Yetkisiz erisim yasaktir ***#
 !
 !
 !
 !
+logging 10.1.40.30
 line con 0
  logging synchronous
 !
 line aux 0
 !
 line vty 0 4
- login
+ access-class YONETIM-ERISIM in
+ login local
+ transport input ssh
 !
 !
+ntp server 10.1.40.30
 !
 end

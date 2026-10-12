@@ -10,7 +10,11 @@ enable secret 5 $1$mERr$hx5rVt7rPNoS4wqbXKX7m0
 !
 !
 !
+ip ssh version 2
 no ip domain-lookup
+ip domain-name lab.local
+!
+username admin secret 5 $1$mERr$hx5rVt7rPNoS4wqbXKX7m0
 !
 !
 !
@@ -25,7 +29,7 @@ interface FastEthernet0/1
  switchport port-security maximum 2
  switchport port-security mac-address sticky
  switchport port-security violation restrict
- switchport port-security mac-address sticky 00E0.B008.3E57
+ switchport port-security mac-address sticky 0001.4203.CBD3
  spanning-tree portfast
  spanning-tree bpduguard enable
 !
@@ -37,7 +41,7 @@ interface FastEthernet0/2
  switchport port-security maximum 2
  switchport port-security mac-address sticky
  switchport port-security violation restrict
- switchport port-security mac-address sticky 00D0.9708.3EAA
+ switchport port-security mac-address sticky 0005.5E03.CBF2
  spanning-tree portfast
  spanning-tree bpduguard enable
 !
@@ -49,7 +53,7 @@ interface FastEthernet0/3
  switchport port-security maximum 2
  switchport port-security mac-address sticky
  switchport port-security violation restrict
- switchport port-security mac-address sticky 0002.1608.3EDE
+ switchport port-security mac-address sticky 00E0.B003.CC35
  spanning-tree portfast
  spanning-tree bpduguard enable
 !
@@ -180,18 +184,27 @@ interface Vlan99
 ip default-gateway 192.168.99.1
 !
 banner motd #*** SW2 - Yetkisiz erisim yasaktir ***#
+logging 192.168.30.10
 !
 !
 !
+ip access-list standard YONETIM-ERISIM
+ permit 192.168.30.0 0.0.0.255
+ permit 192.168.99.0 0.0.0.255
 line con 0
  logging synchronous
 !
 line vty 0 4
- login
+ access-class YONETIM-ERISIM in
+ login local
+ transport input ssh
 line vty 5 15
- login
+ access-class YONETIM-ERISIM in
+ login local
+ transport input ssh
 !
 !
 !
+ntp server 192.168.30.10
 !
 end

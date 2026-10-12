@@ -10,7 +10,11 @@ enable secret 5 $1$mERr$hx5rVt7rPNoS4wqbXKX7m0
 !
 !
 !
+ip ssh version 2
 no ip domain-lookup
+ip domain-name lab.local
+!
+username admin secret 5 $1$mERr$hx5rVt7rPNoS4wqbXKX7m0
 !
 !
 !
@@ -83,18 +87,27 @@ interface Vlan1
  shutdown
 !
 banner motd #*** SW-SUBE - Yetkisiz erisim yasaktir ***#
+logging 10.10.30.10
 !
 !
 !
+ip access-list standard YONETIM-ERISIM
+ permit 10.10.30.0 0.0.0.255
+ permit 10.10.99.0 0.0.0.255
 line con 0
  logging synchronous
 !
 line vty 0 4
- login
+ access-class YONETIM-ERISIM in
+ login local
+ transport input ssh
 line vty 5 15
- login
+ access-class YONETIM-ERISIM in
+ login local
+ transport input ssh
 !
 !
 !
+ntp server 10.10.30.10
 !
 end
